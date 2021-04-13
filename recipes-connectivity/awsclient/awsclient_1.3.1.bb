@@ -6,6 +6,7 @@ SRC_URI = "\
     https://github.com/osb-cc-esec/meta-esec-awsclient/releases/download/v${PV}/awsclient_${PV}_${TARGET_ARCH} \
     file://awsclient.service \
     file://awsclient.timer \
+    file://awsclientcheck.sh \
 "
 
 SRC_URI[md5sum] = "95b24fb7a64746efac2f2ce57ca2215a"
@@ -20,6 +21,7 @@ SYSTEMD_SERVICE_${PN} = "awsclient.timer"
 do_install () {
     install -d ${D}${bindir}/
     install -m 0755 ${WORKDIR}/awsclient_${PV}_${TARGET_ARCH} ${D}${bindir}/awsclient
+    install -m 0555 ${WORKDIR}/awsclientcheck.sh ${D}${bindir}/awsclientcheck
 
     install -d ${D}${systemd_unitdir}/system/
     install -m 0644 ${WORKDIR}/awsclient.service ${D}${systemd_unitdir}/system/

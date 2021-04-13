@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=oneshot
 User=root
-ExecStart=/usr/bin/awsclient
+ExecStart=/usr/bin/awsclientcheck
 WorkingDirectory=/mnt/config/aws/
 TimeoutStartSec=15m
 
