@@ -260,3 +260,10 @@ $tpm2pkcs11tool -w "${CA_DIR}/devcrt.pem" -y cert -a iotdm-cert --pin ${TPM_PIN}
 $tpm2pkcs11tool -w "${CA_PEM}" -y cert -a iotdm-subcert --pin ${TPM_PIN} -d 3
 # Write root CA cert
 $tpm2pkcs11tool -w "${ROOTCA_PEM}" -y cert -a iotdm-rootcert --pin ${TPM_PIN} -d 4
+
+#ssh access to ESEC IoT Device Manager Platform
+$tpm2pkcs11tool --init-token --slot 2 --label=iotdm-ssh --so-pin=${TPM_SOPIN}
+# Set user pin
+$tpm2pkcs11tool --label="iotdm-ssh" --slot 2 --init-pin --so-pin ${TPM_SOPIN} --pin ${TPM_PIN}
+#Create ssh keypair
+$tpm2pkcs11tool --label="ssh-keypair" --slot 2 --login --pin=${TPM_PIN} --keypairgen --usage-sign --key-type EC:prime256v1 -d 1
