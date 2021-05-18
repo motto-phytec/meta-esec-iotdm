@@ -2,9 +2,7 @@ SUMMARY = "Phytec's headless image"
 DESCRIPTION = "no graphics support in this image"
 LICENSE = "MIT"
 inherit core-image
-
-include security/userauthentication.inc
-include security/simple-fitimage.inc
+require recipes-images/images/security/setrootpassword.inc
 
 IMAGE_ROOTFS_SIZE ?= "8192"
 
@@ -31,6 +29,7 @@ IMAGE_INSTALL = " \
     phytec-board-info \
     phytec-board-config \
     blink-led \
+    ${@bb.utils.contains("DISTRO_FEATURES", "protectionshield", "phytec-example-users", "", d)} \
 "
 
 IMAGE_INSTALL_append_mx6 = " firmwared"
