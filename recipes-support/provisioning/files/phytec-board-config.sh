@@ -17,6 +17,8 @@ One of the following options can be selected at a time:
                                             for ESEC IoT Device Manager Platform
   -o, --onboarding                          Only Onboarding the device for ESEC
                                             IoT Device Manager Platform
+  -s, --sshlogin                            Change Authentication for SSH
+  -c, --consolelogin                        Change Authentication for Console
   -h. --help                                This Help
 "
 
@@ -348,6 +350,45 @@ do_newaccount() {
     return $val
 }
 
+do_login() {
+    login_state=$(awk '/common-auth/ { if (substr($1,1,1) ~ /^[# ]/ ) print 1; else print 0}' /etc/pam.d/${2})
+    password_text="Password"
+    google_text="Connagtive Authentication"
+    if [ ${login_state} -eq 0 ]; then
+        password_text="$password_text is active yet"
+    else
+        google_text="$google_text is active yet"
+    fi
+
+    login_newstate=$(whiptail --menu "Choose the ROOT Verification for $1" 20 60 10 \
+        "0" "$password_text" \
+        "1" "$google_text" \
+        3>&1 1>&2 2>&3)
+
+    RET=$?
+    if [ $RET -eq 0 ]; then
+        if [ ${login_state} -ne ${login_newstate} ]; then
+            if [ ${login_newstate} -eq 0 ]; then
+                do_login_password ${2}
+            else
+                do_login_authenticator ${2}
+            fi
+        fi
+    fi
+}
+
+#parameter sshd or login
+do_login_authenticator() {
+    #set google authenticator for ssh
+    sed -i '/pam_google_authenticator.so/s/^#//g' /etc/pam.d/$1
+    sed -i '/common-auth/s/^/#/g' /etc/pam.d/$1
+}
+
+do_login_password() {
+    #set Password for ssh
+    sed -i '/common-auth/s/^#//g' /etc/pam.d/$1
+    sed -i '/pam_google_authenticator.so/s/^/#/g' /etc/pam.d/$1
+}
 
 calc_wt_size
 do_esecawsconf
@@ -375,6 +416,14 @@ do
         set_eseccontract
         INTERACTIVE=False
         ;;
+    -s|sshlogin)
+        do_login "SSH" "sshd"
+        exit 0
+        ;;
+    -c|consolelogin)
+        do_login "Console" "login"
+        exit 0
+        ;;
     -h|--help)
         echo "$usage"
         exit 0
@@ -393,8 +442,10 @@ if [ "$INTERACTIVE" = True ]; then
         FUN=$(whiptail --title "PHYTEC - ESEC IoT Device Configuration Tool" --backtitle "$(tr -d '\0' < /proc/device-tree/model)" --menu "Setup Options" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT --cancel-button Finish --ok-button Select \
             "1 New Account and Onboarding" "for ESEC IoT Device Manager Platform" \
             "2 Onboarding" "for ESEC IoT Device Manager Platform" \
-            "3 Contract" "for ESEC IoT Device Manager Platform" \
-            "4 About" "ESEC IoT Device Manager Platform" \
+            "3 Login Settings for Console" "" \
+            "4 Login Settings for SSH" "" \
+            "5 Contract" "for ESEC IoT Device Manager Platform" \
+            "6 About" "ESEC IoT Device Manager Platform" \
             3>&1 1>&2 2>&3)
         RET=$?
         if [ $RET -eq 1 ]; then
@@ -403,8 +454,10 @@ if [ "$INTERACTIVE" = True ]; then
             case "$FUN" in
             1\ *) do_newaccount ;;
             2\ *) do_onboarding ;;
-            3\ *) do_contract 1 ;;
-            4\ *) do_about ;;
+            3\ *) do_login "Console" "login" ;;
+            4\ *) do_login "SSH" "sshd" ;;
+            5\ *) do_contract 1 ;;
+            6\ *) do_about ;;
             *) whiptail --msgbox "Programmer error: unrecognized option" $WT_HEIGHT $WT_WIDTH 1 ;;
             esac || whiptail --msgbox "There was an error running option $FUN" 20 60 1
         fi
